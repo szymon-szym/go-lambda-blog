@@ -1,0 +1,5 @@
+{
+    "Parameters": {
+        "DB_SECRET_NAME": "arn:aws:secretsmanager:us-east-1:765444088049:secret:DBSecret-AXUMimslPK9p-buNm7y"
+    }
+}

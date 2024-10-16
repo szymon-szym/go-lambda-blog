@@ -1,0 +1,75 @@
+openapi: "3.0.1"
+info:
+  title: "Items Service API"
+  description: "An API to manage items with id, name, and price."
+  version: "1.0.0"
+servers:
+- url: "http://localhost:3000"
+tags:
+- name: "aws:cloudformation:stack-name"
+  x-amazon-apigateway-tag-value: "go-lambda"
+- name: "aws:cloudformation:logical-id"
+  x-amazon-apigateway-tag-value: "ItemsAPI"
+- name: "aws:cloudformation:stack-id"
+  x-amazon-apigateway-tag-value:
+    Fn::Sub: "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/${AWS::StackId}"
+- name: "httpapi:createdBy"
+  x-amazon-apigateway-tag-value: "SAM"
+paths:
+  /item/{id}:
+    get:
+      operationId: "getItemById"
+      responses:
+        '200':
+          description: "Successful response"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+      x-amazon-apigateway-integration:
+        payloadFormatVersion: "2.0"
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetItemFunction.Arn}/invocations"
+        connectionType: "INTERNET"
+    parameters:
+    - name: "id"
+      in: "path"
+      description: "Generated path parameter for id"
+      required: true
+      schema:
+        type: "integer"
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+      - "id"
+      - "name"
+      - "price"
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "item1"
+        price:
+          type: number
+          format: float
+          example: 1.99
+    CreateItemInput:
+      type: object
+      required:
+      - "name"
+      - "price"
+      properties:
+        name:
+          type: string
+          example: "item1"
+        price:
+          type: number
+          format: float
+          example: 1.99
+x-amazon-apigateway-importexport-version: "1.0"

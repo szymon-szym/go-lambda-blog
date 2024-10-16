@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-app
+  
+  Sample SAM Template for sam-app
+
+Globals:
+  Function:
+    Timeout: 5
+    MemorySize: 128
+    
+Resources:
+
+  ItemsAPI:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: './api.yaml'
+      FailOnWarnings: false
+
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Postgres config string
+      SecretString: 'host=172.17.0.1 port=5431 user=admin password=root dbname=lambdas sslmode=disable'
+
+  GetItemFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      Tracing: Active
+      CodeUri: lambda_handlers/cmd/get_item/
+      Handler: bootstrap
+      Runtime: provided.al2023
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          DB_SECRET_NAME: !Ref DBSecret
+          API_STAGE: Prod
+      Events:
+        HttpApiEvents:
+          Type: HttpApi
+          Properties:
+            Path: /item/{id}
+            Method: GET
+            ApiId: !Ref ItemsAPI
+      Policies: 
+        - AWSLambdaBasicExecutionRole
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DBSecret
+Outputs:
+  ItemsAPI:
+    Description: "API Gateway endpoint URL for Prod environment for First Function"
+    Value: !Sub "https://${ItemsAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
